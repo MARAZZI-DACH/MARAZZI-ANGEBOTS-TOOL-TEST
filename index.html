@@ -271,8 +271,9 @@ button{cursor:pointer}
           <th style="text-align:center">Pos.</th>
           <th style="text-align:center">Menge</th>
           <th style="text-align:left">Artikel</th>
-          <th style="text-align:center">Art.Nr</th>
-          <th style="text-align:center">Größe</th>
+          <th style="text-align:center">Kode</th>
+          <th style="text-align:center">Format</th>
+          <th style="text-align:center">Lager</th>
           <th style="text-align:center">ME</th>
           <th style="text-align:center">Fracht</th>
           <th style="text-align:right">Brutto</th>
@@ -319,14 +320,14 @@ function calcNet(b,g,z1,z2,z3){return b*(1-g)*(1-z1)*(1-z2)*(1-z3)}
 function genNr(){
   var n=new Date();
   var ini=S.ini||'XX';
-  return ini+String(n.getDate()).padStart(2,'0')+String(n.getMonth()+1).padStart(2,'0')+n.getFullYear()+S.lnr;
+  return ini+String(n.getDate()).padStart(2,'0')+String(n.getMonth()+1).padStart(2,'0')+String(n.getFullYear()).slice(-2)+S.lnr;
 }
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 function zrLabel(v){var p=(v*100).toFixed(0)+'%';if(v===0.30)return p+' (Eigenbedarf)';if(v===0.50)return p+' (Muster)';return p}
 function getND(p){if(p.nm!==''&&!isNaN(parseFloat(p.nm)))return parseFloat(p.nm);return p.net}
 
 function init(){
-  var datum=new Date().toLocaleDateString('de-DE');
+  var d=new Date();var datum=String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear();
   document.getElementById('hdr-info').textContent='Version 1.0';
   document.getElementById('footer-info').textContent='';
 
@@ -396,13 +397,22 @@ function doSearch(){
   if(q){var ql=q.toLowerCase();f=f.filter(function(a){return a[1].toLowerCase().indexOf(ql)>=0||a[2].toLowerCase().indexOf(ql)>=0||D.S[a[0]].toLowerCase().indexOf(ql)>=0||a[3].toLowerCase().indexOf(ql)>=0})}
   f=f.slice(0,40);
   if(f.length===0){box.innerHTML='<div class="nores">Kein Artikel gefunden</div>';return}
-  var h='<div class="res"><table><thead><tr><th>Serie</th><th>Artikel</th><th style="text-align:center">Art.Nr</th><th style="text-align:center">Größe</th><th style="text-align:center">Werk</th><th style="text-align:center">ME</th><th style="text-align:right">Brutto</th><th></th></tr></thead><tbody>';
+  var h='<div class="res"><table><thead><tr><th>Serie</th><th>Artikel</th><th style="text-align:center">Kode</th><th style="text-align:center">Format</th><th style="text-align:center">Werk</th><th style="text-align:center">ME</th><th style="text-align:right">Brutto</th><th></th></tr></thead><tbody>';
   f.forEach(function(a){
     var idx=D.A.indexOf(a);
     h+='<tr><td style="color:#999;font-size:11px">'+esc(D.S[a[0]])+'</td><td style="font-weight:500">'+esc(a[1])+'</td><td style="text-align:center;font-family:monospace;font-size:11px">'+esc(a[2])+'</td><td style="text-align:center;font-size:11px">'+esc(a[3])+'</td><td style="text-align:center;font-size:10px;color:#999">'+esc(D.W[a[4]])+'</td><td style="text-align:center;font-size:11px">'+esc(D.M[a[5]])+'</td><td style="text-align:right;font-weight:600">'+fmt(a[6])+'</td><td><button class="ba" onclick="addPos('+idx+')">+</button></td></tr>';
   });
   h+='</tbody></table></div>';
   box.innerHTML=h;
+}
+
+// Werk to country code mapping
+function werkKz(w){
+  if(!w)return '';
+  if(w==='BULGARIEN')return 'BG';
+  if(w==='POLEN')return 'PL';
+  if(w==='SPANIEN')return 'SP';
+  return 'IT'; // ITALIEN, ITALIEN - BG, ITALIEN - PL
 }
 
 // Positions
@@ -448,9 +458,10 @@ function renderPos(){
     (p.menge==='ALT'?'<span style="font-size:11px;font-weight:700;color:#1565c0;background:#e3f2fd;padding:2px 6px;border-radius:4px">Alternativ ✓ <span style=\"cursor:pointer\" onclick=\"S.pos['+i+'].menge=\'\';renderPos()\">×</span></span>':'')+
     '</div>'+
     '</td>';
-    h+='<td><div style="font-weight:600;font-size:12px">'+esc(p.art)+'</div><div style="font-size:10px;color:#aaa">'+esc(p.serie)+' | '+esc(p.werk)+'</div></td>';
+    h+='<td><div style="font-weight:600;font-size:12px">'+esc(p.art)+'</div><div style="font-size:10px;color:#aaa">'+esc(p.serie)+'</div></td>';
     h+='<td style="text-align:center;font-family:monospace;font-size:11px">'+esc(p.artnr)+'</td>';
     h+='<td style="text-align:center;font-size:11px">'+esc(p.sz)+'</td>';
+    h+='<td style="text-align:center;font-size:10px;color:#666">'+esc(p.werk)+'</td>';
     h+='<td style="text-align:center;font-size:11px">'+esc(p.me)+'</td>';
     h+='<td style="text-align:center"><button class="fracht-btn '+fc+'" onclick="toggleFracht('+i+')">'+p.fracht+'</button></td>';
     h+='<td style="text-align:right;font-weight:600;font-size:12px">'+fmt(p.brutto)+'</td>';
@@ -500,14 +511,14 @@ function checkOk(){
 // PDF
 function doPDF(){
   var nr=genNr();
-  var datum=new Date().toLocaleDateString('de-DE');
+  var d=new Date();var datum=String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear();
   var bvD=S.bv||'Keine Angabe';
   var ocD=S.oc||'Keine Angabe';
   var promD=S.prom||'Keine Angabe';
 
-  var ts='background:#2c3e5a;color:#fff;padding:4px 4px;border:1px solid #1e2d42;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px';
-  var cd='border:1px solid #ccc;padding:3px 5px;font-size:9px;background:#f2f7f2'; // green tint for data
-  var cn='border:1px solid #ccc;padding:3px 5px;font-size:9px;background:#eef3fa;text-align:right;font-weight:700;color:#c00'; // blue tint for netto
+  var ts='background:#2c3e5a;color:#fff;padding:4px 4px;border:1px solid #ccc;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;white-space:nowrap';
+  var cd='border:1px solid #ccc;padding:3px 4px;font-size:9px;background:#f2f7f2'; // green tint for data
+  var cn='border:1px solid #ccc;padding:3px 4px;font-size:9px;background:#eef3fa;text-align:right;font-weight:700;color:#c00;white-space:nowrap'; // blue tint for netto
 
   // Determine max rabatt columns needed across ALL positions
   var hasAnyZr2=S.pos.some(function(p){return p.zr2>0});
@@ -532,15 +543,16 @@ function doPDF(){
       }
     }
     return '<tr>' +
-      '<td style="'+cd+';text-align:center">'+(i+1)+'</td>' +
-      '<td style="'+cd+';text-align:right">'+(p.menge==='ALT'?'Alternativ':esc(p.menge))+'</td>' +
-      '<td style="'+cd+'">Marazzi</td>' +
+      '<td style="'+cd+';text-align:center;white-space:nowrap">'+(i+1)+'</td>' +
+      '<td style="'+cd+';text-align:right;white-space:nowrap">'+(p.menge==='ALT'?'Alternativ':esc(p.menge))+'</td>' +
+      '<td style="'+cd+';white-space:nowrap">Marazzi</td>' +
       '<td style="'+cd+'">'+esc(p.serie)+'</td>' +
       '<td style="'+cd+'">'+esc(p.art)+'</td>' +
-      '<td style="'+cd+';text-align:center">'+esc(p.artnr)+'</td>' +
-      '<td style="'+cd+';text-align:center">'+esc(p.sz)+'</td>' +
-      '<td style="'+cd+';text-align:center;font-weight:600">'+p.fracht+'</td>' +
-      '<td style="'+cd+';text-align:center">'+esc(p.me)+'</td>' +
+      '<td style="'+cd+';text-align:center;white-space:nowrap;font-weight:600">'+esc(p.artnr)+'</td>' +
+      '<td style="'+cd+';text-align:center;white-space:nowrap">'+esc(p.sz)+'</td>' +
+      '<td style="'+cd+';text-align:center;font-size:8px;white-space:nowrap">'+esc(p.werk)+'</td>' +
+      '<td style="'+cd+';text-align:center;font-weight:600;white-space:nowrap">'+p.fracht+'</td>' +
+      '<td style="'+cd+';text-align:center;white-space:nowrap">'+esc(p.me)+'</td>' +
       rc +
       '<td style="'+cn+'">'+fmt(nv)+'</td></tr>';
   }).join('');
@@ -558,7 +570,7 @@ function doPDF(){
 
   var pdf='<!DOCTYPE html><html><head><meta charset="utf-8"><title>Angebot '+esc(nr)+'</title>' +
     '<style>' +
-    '@page{size:A4 portrait;margin:12mm 12mm 14mm 12mm}' +
+    '@page{size:A4 portrait;margin:12mm 10mm 14mm 10mm}' +
     'body{font-family:"Segoe UI",Arial,sans-serif;color:#222;margin:0;padding:14px;font-size:10px;line-height:1.3}' +
     'table{border-collapse:collapse;width:100%}' +
     '</style></head><body>' +
@@ -572,15 +584,16 @@ function doPDF(){
     '<tr><td style="font-weight:600;color:#555;padding:2px 0;border:none">Objektberater:</td><td style="font-weight:700;padding:2px 0;border:none">'+esc(promD)+'</td></tr>' +
     '</table>' +
     '<p style="font-size:14px;margin-bottom:5px">Sehr geehrte Damen und Herren,</p>' +
-    '<p style="font-size:14px;margin-bottom:24px">vielen Dank f\u00fcr Ihre Anfrage zu oben genanntem BV.<br>Gerne bieten wir wie folgt an:</p>' +
+    '<p style="font-size:14px;margin-bottom:24px">vielen Dank f\u00fcr Ihre Anfrage zum oben genannten Bauvorhaben.<br>Gerne unterbreiten wir Ihnen folgendes Angebot:</p>' +
     '<table><thead><tr>' +
     '<th style="'+ts+';text-align:center">Pos.</th>' +
     '<th style="'+ts+';text-align:center">Menge</th>' +
-    '<th style="'+ts+';text-align:left">Marazzi</th>' +
+    '<th style="'+ts+';text-align:left">Brand</th>' +
     '<th style="'+ts+';text-align:left">Serie</th>' +
-    '<th style="'+ts+';text-align:left">Artikel</th>' +
-    '<th style="'+ts+';text-align:center">Ar.Nr</th>' +
-    '<th style="'+ts+';text-align:center">Gr\u00f6\u00dfe</th>' +
+    '<th style="'+ts+';text-align:left;white-space:normal">Artikel</th>' +
+    '<th style="'+ts+';text-align:center">Kode</th>' +
+    '<th style="'+ts+';text-align:center">Format</th>' +
+    '<th style="'+ts+';text-align:center">Lager</th>' +
     '<th style="'+ts+';text-align:center">Fracht</th>' +
     '<th style="'+ts+';text-align:center">ME</th>' +
     rh +
@@ -591,9 +604,10 @@ function doPDF(){
       '<td style="'+cd+'">Marazzi</td>'+
       '<td style="'+cd+'">Transportkosten</td>'+
       '<td style="'+cd+'">Transportkosten / Frachtpauschale</td>'+
-      '<td style="'+cd+';text-align:center">–</td>'+
-      '<td style="'+cd+';text-align:center">–</td>'+
-      '<td style="'+cd+';text-align:center;font-weight:600">EXW</td>'+
+      '<td style="'+cd+';text-align:center">\u2013</td>'+
+      '<td style="'+cd+';text-align:center">\u2013</td>'+
+      '<td style="'+cd+';text-align:center">\u2013</td>'+
+      '<td style="'+cd+';text-align:center">\u2013</td>'+
       '<td style="'+cd+';text-align:center">Pausch.</td>'+
       (S.showBrutto?'<td style="'+cd+'"></td>':'')+
       (S.showRab?'<td style="'+cd+'"></td><td style="'+cd+'"></td>'+(hasAnyZr2?'<td style="'+cd+'"></td>':'')+(hasAnyZr3?'<td style="'+cd+'"></td>':''):'')+
@@ -630,12 +644,19 @@ function doPDF(){
     '</div>' +
     '</body></html>';
 
+  var bvSafe=(S.bv||'').replace(/[^a-zA-Z0-9äöüÄÖÜß\s\-]/g,'').trim();
+  var fileName='Angebot '+nr+(bvSafe?' - '+bvSafe:'')+'.html';
   try{
     var blob=new Blob([pdf],{type:'text/html'});
     var url=URL.createObjectURL(blob);
-    var w=window.open(url,'_blank');
-    if(!w){var a=document.createElement('a');a.href=url;a.download='Angebot_'+nr+'.html';a.click();showMsg('HTML heruntergeladen. Im Browser \u00f6ffnen und als PDF drucken (Strg+P).');}
-    else{w.onload=function(){setTimeout(function(){try{w.print()}catch(e){}},400)};showMsg('PDF-Fenster ge\u00f6ffnet. Falls nicht sichtbar, Pop-up-Blocker pr\u00fcfen.');}
+    var a=document.createElement('a');
+    a.href=url;
+    a.download=fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(url)},1000);
+    showMsg('\u2705 Angebot heruntergeladen! Im Browser \u00f6ffnen \u2192 Strg+P \u2192 Als PDF drucken.');
   }catch(e){showMsg('Fehler: '+e.message)}
 }
 
