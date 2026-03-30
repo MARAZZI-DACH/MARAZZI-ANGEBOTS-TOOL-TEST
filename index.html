@@ -645,18 +645,25 @@ function doPDF(){
     '</body></html>';
 
   var bvSafe=(S.bv||'').replace(/[^a-zA-Z0-9äöüÄÖÜß\s\-]/g,'').trim();
-  var fileName='Angebot '+nr+(bvSafe?' - '+bvSafe:'')+'.html';
+  var fileName='Angebot_'+nr+'.html';
   try{
-    var blob=new Blob([pdf],{type:'text/html'});
-    var url=URL.createObjectURL(blob);
-    var a=document.createElement('a');
-    a.href=url;
-    a.download=fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(function(){URL.revokeObjectURL(url)},1000);
-    showMsg('\u2705 Angebot heruntergeladen! Im Browser \u00f6ffnen \u2192 Strg+P \u2192 Als PDF drucken.');
+    var isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&'ontouchend' in document);
+    if(isIOS){
+      var w=window.open('','_blank');
+      if(w){w.document.write(pdf);w.document.close();}
+      else{showMsg('Bitte Pop-ups erlauben und erneut versuchen.');}
+    }else{
+      var blob=new Blob([pdf],{type:'text/html'});
+      var url=URL.createObjectURL(blob);
+      var a=document.createElement('a');
+      a.href=url;
+      a.download=fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function(){URL.revokeObjectURL(url)},1000);
+    }
+    showMsg('\u2705 Angebot erstellt! Drucken: Strg+P \u2192 Als PDF speichern.');
   }catch(e){showMsg('Fehler: '+e.message)}
 }
 
