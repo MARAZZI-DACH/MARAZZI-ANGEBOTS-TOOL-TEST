@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Marazzi Angebots-Tool v6.0</title>
+<title>Marazzi Angebots-Tool v2.0</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect fill='%23cc0000' width='32' height='32' rx='6'/><text x='16' y='22' font-size='18' font-weight='900' fill='white' text-anchor='middle' font-family='Arial'>M</text></svg>">
 <style>
 :root{--red:#cc0000;--dark:#2c3e5a;--bg:#f4f4f2;--card:#fff;--border:#e0ddd8;--text:#222}
@@ -135,8 +136,11 @@ button{cursor:pointer}
       <div style="width:1px;height:24px;background:#ddd"></div>
       <div class="opt-item">
         <span class="lnr-label">Lfd. Nr.</span>
-        <input type="text" id="f-lnr" class="lnr-input" value="01" maxlength="2" oninput="handleLnr(this)">
-        <span class="sub">(01–99, wird Teil der Angebotsnummer)</span>
+<input type="text" id="f-lnr" class="lnr-input" value="01" maxlength="2" readonly style="background:#f5f5f5;cursor:not-allowed" title="Wird automatisch vergeben">
+<span class="sub">(automatisch)</span>
+      </div> <div class="opt-item" style="flex:1 1 100%;flex-direction:column;align-items:flex-start;border-top:1px solid #eee;padding-top:12px;margin-top:6px">
+        <label style="display:block;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#888;margin-bottom:6px">Interne Notiz <span style="color:#bbb;text-transform:none;letter-spacing:0;font-size:10px">(nicht im PDF, nur intern gespeichert)</span></label>
+        <textarea id="f-notiz" rows="2" placeholder="z.B. Herr Maier hat die Anfrage gesendet..." style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:4px;font-family:inherit;font-size:13px;resize:vertical;min-height:50px;background:#fafafa;box-sizing:border-box" oninput="S.notiz=this.value"></textarea>
       </div>
     </div>
   </div>
@@ -195,7 +199,7 @@ var GR_OPT=[0.50,0.55];
 var ZR1_OPT=[0,0.02,0.03,0.05,0.07,0.08,0.10,0.12,0.15,0.18,0.20,0.30,0.50];
 var ZR23_OPT=[0,0.02,0.03,0.05,0.07,0.08,0.10,0.12,0.15,0.18,0.20];
 
-var S={erst:'',ini:'',bv:'',kunde:'',ansprech:'',kat:'',marke:'',ocPdf:'',prom:'',pos:[],showRab:false,showBrutto:false,lnr:'01',showTransport:false,transportKosten:''};
+var S={erst:'',ini:'',bv:'',kunde:'',ansprech:'',kat:'',marke:'',ocPdf:'',prom:'',pos:[],showRab:false,showBrutto:false,lnr:'01',showTransport:false,transportKosten:'' ,notiz:''};
 
 var SIGS={};
 function getSig(n){return null;}
@@ -266,10 +270,18 @@ function handleMarke(v){
   }
 }
 
-function handleErst(n){
+async function handleErst(n){
   S.erst=n;
   var p=n.trim().split(' ');
   S.ini=p.length>=2?(p[0][0]+p[1][0]).toUpperCase():(p[0]?p[0].substring(0,2).toUpperCase():'');
+  if(S.ini){
+    const lfd = await getNaechsteLfd(S.ini);
+    if(lfd !== null){
+      S.lnr = String(lfd).padStart(2,'0');
+      const lnrInput = document.getElementById('f-lnr');
+      if(lnrInput) lnrInput.value = S.lnr;
+    }
+  }
   updateNr();
 }
 
@@ -562,10 +574,121 @@ function doPDF(){
     if(w){w.document.write(pdf);w.document.close();}
     else{showMsg('Bitte Pop-ups erlauben und erneut versuchen.');return;}
     showMsg('\u2705 Angebot erstellt! Drucken: Strg+P \u2192 Als PDF speichern.');
+ speichereInSupabase(nr).then(function(res){
+      if(res.ok){
+        showMsg('\u2705 Angebot ' + nr + ' erstellt und gespeichert.');
+        getNaechsteLfd(S.ini).then(function(lfd){
+          if(lfd !== null){
+            S.lnr = String(lfd).padStart(2,'0');
+            var lnrInput = document.getElementById('f-lnr');
+            if(lnrInput) lnrInput.value = S.lnr;
+            updateNr();
+          }
+        });
+      } else {
+        showMsg('\u26A0 PDF erstellt, aber NICHT in Datenbank gespeichert: ' + (res.error || 'Unbekannter Fehler'));
+      }
+    });   
   }catch(e){showMsg('Fehler: '+e.message)}
 }
 
-function showMsg(t){var el=document.getElementById('msg-box');el.textContent=t;el.style.display='block';setTimeout(function(){el.style.display='none'},8000)}
+  const SUPABASE_URL = "https://qxkhchzsybncwfuofnhn.supabase.co";
+const SUPABASE_KEY = "sb_publishable_NVxpKOtGjsnLSuNnXlCIwQ_ILQ_OZCx";
+const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function getNaechsteLfd(kuerzel){
+  try{
+    const heute = new Date().toISOString().slice(0,10);
+    const { data, error } = await supa
+      .from('angebote')
+      .select('laufende_nr')
+      .eq('ersteller_kuerzel', kuerzel)
+      .eq('angebots_datum', heute)
+      .eq('geloescht', false)
+      .order('laufende_nr', { ascending: false })
+      .limit(1);
+    if(error){ console.error('Supabase Fehler:', error); return null; }
+    if(!data || data.length === 0) return 1;
+    return data[0].laufende_nr + 1;
+  }catch(e){
+    console.error('getNaechsteLfd Exception:', e);
+    return null;
+  }
+}
+
+const SUPABASE_URL = "https://qxkhchzsybncwfuofnhn.supabase.co";
+const SUPABASE_KEY = "sb_publishable_NVxpKOtGjsnLSuNnXlCIwQ_ILQ_OZCx";
+const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function getNaechsteLfd(kuerzel){
+  try{
+    const heute = new Date().toISOString().slice(0,10);
+    const { data, error } = await supa
+      .from('angebote')
+      .select('laufende_nr')
+      .eq('ersteller_kuerzel', kuerzel)
+      .eq('angebots_datum', heute)
+      .eq('geloescht', false)
+      .order('laufende_nr', { ascending: false })
+      .limit(1);
+    if(error){ console.error('Supabase Fehler:', error); return null; }
+    if(!data || data.length === 0) return 1;
+    return data[0].laufende_nr + 1;
+  }catch(e){
+    console.error('getNaechsteLfd Exception:', e);
+    return null;
+  }
+}
+
+async function speichereInSupabase(angebotsNr){
+  try{
+    const heute = new Date().toISOString().slice(0,10);
+    const lfdNum = parseInt(S.lnr, 10) || 1;
+    const kundenZeilen = (S.kunde || '').split('|').map(s => s.trim());
+    const kundeName = kundenZeilen[0] || '';
+    const kundeStrasse = kundenZeilen[1] || '';
+    const kundePlzOrt = kundenZeilen[2] || '';
+
+    const gesamt = (S.pos || []).reduce(function(sum, p){
+      const menge = parseFloat(p.menge) || 0;
+      const netto = calcNet(p.brutto || 0, p.gr || 0, p.z1 || 0, p.z2 || 0, p.z3 || 0);
+      return sum + (menge * netto);
+    }, 0);
+
+    const datensatz = {
+      ersteller_kuerzel: S.ini || 'XX',
+      angebots_datum: heute,
+      laufende_nr: lfdNum,
+      ersteller_name: S.erst || '',
+      bauvorhaben: S.bv || '',
+      kunde_name: kundeName,
+      kunde_strasse: kundeStrasse,
+      kunde_plz_ort: kundePlzOrt,
+      ansprechpartner: S.ansprech || '',
+      kategorie: S.kat || '',
+      marke: S.marke || '',
+      objektberater: S.ocPdf || '',
+      zeigt_rabatte: !!S.showRab,
+      zeigt_brutto: !!S.showBrutto,
+      zeigt_transport: !!S.showTransport,
+      transport_kosten: S.transportKosten ? parseFloat(String(S.transportKosten).replace(',','.')) || null : null,
+      positionen: S.pos || [],
+      gesamt_summe: gesamt,
+      interne_notiz: S.notiz || ''
+    };
+
+    const { data, error } = await supa.from('angebote').insert([datensatz]).select();
+    if(error){
+      console.error('Speichern-Fehler:', error);
+      return { ok: false, error: error.message };
+    }
+    return { ok: true, data: data && data[0] };
+  }catch(e){
+    console.error('speichereInSupabase Exception:', e);
+    return { ok: false, error: e.message };
+  }
+}
+  function showMsg(t){var el=document.getElementById('msg-box');el.textContent=t;el.style.display='block';setTimeout(function(){el.style.display='none'},8000)}
 
 function resetAll(){
   S.pos=[];S.bv='';S.kunde='';S.ansprech='';S.kat='';S.marke='';S.ocPdf='';S.prom='';S.lnr='01';S.showRab=false;S.showBrutto=false;S.showTransport=false;S.transportKosten='';document.getElementById('transport-row-container').innerHTML='';var tb=document.getElementById('btn-transport');if(tb){tb.className='btn-transport off';tb.textContent='+ Transportkosten Extra';}
