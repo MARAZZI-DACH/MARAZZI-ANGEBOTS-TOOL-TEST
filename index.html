@@ -616,10 +616,6 @@ async function getNaechsteLfd(kuerzel){
   }
 }
 
-const SUPABASE_URL = "https://qxkhchzsybncwfuofnhn.supabase.co";
-const SUPABASE_KEY = "sb_publishable_NVxpKOtGjsnLSuNnXlCIwQ_ILQ_OZCx";
-const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
 async function getNaechsteLfd(kuerzel){
   try{
     const heute = new Date().toISOString().slice(0,10);
