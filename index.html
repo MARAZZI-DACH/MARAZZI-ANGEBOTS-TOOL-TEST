@@ -674,8 +674,15 @@ async function speichereInSupabase(angebotsNr){
     };
 
     const { data, error } = await supa.from('angebote').insert([datensatz]).select();
-    if(error){
-      console.error('Speichern-Fehler:', error);
+ if(error){
+      console.error('=== SUPABASE SPEICHERN-FEHLER ===');
+      console.error('Code:', error.code);
+      console.error('Message:', error.message);
+      console.error('Details:', error.details);
+      console.error('Hint:', error.hint);
+      console.error('Datensatz war:', JSON.stringify(datensatz, null, 2));
+      console.error('=================================');
+      alert('SPEICHER-FEHLER:\n\n' + error.message + '\n\n' + (error.details || '') + '\n\n(Details in der Browser-Konsole F12)');
       return { ok: false, error: error.message };
     }
     return { ok: true, data: data && data[0] };
