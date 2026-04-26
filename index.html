@@ -915,8 +915,91 @@ function formatDatumDE(iso){
   return p[2] + '.' + p[1] + '.' + p[0];
 }
 
-function ladeAngebotInsTool(id){
-  alert('Laden ins Tool wird im nächsten Schritt gebaut.\nID: ' + id);
+async function ladeAngebotInsTool(id){
+  try{
+    const { data, error } = await supa
+      .from('angebote')
+      .select('*')
+      .eq('id', id)
+      .single();
+    if(error || !data){
+      alert('Fehler beim Laden:\n\n' + (error ? error.message : 'Angebot nicht gefunden'));
+      return;
+    }
+    resetAll();
+    S.geladenVon = data;
+    S.bv = data.bauvorhaben || '';
+    document.getElementById('f-bv').value = S.bv;
+    var kundeKomplett = [data.kunde_name, data.kunde_strasse, data.kunde_plz_ort]
+      .filter(function(t){ return t && t.trim(); })
+      .join(' | ');
+    S.kunde = kundeKomplett;
+    document.getElementById('f-kunde').value = kundeKomplett;
+    S.ansprech = data.ansprechpartner || '';
+    document.getElementById('f-ansprech').value = S.ansprech;
+    if(data.kategorie){
+      document.getElementById('f-kat').value = data.kategorie;
+      handleKat(data.kategorie);
+      if(data.marke){
+        document.getElementById('f-marke').value = data.marke;
+        handleMarke(data.marke);
+      }
+    }
+    S.showRab = !!data.zeigt_rabatte;
+    document.getElementById('f-rab').checked = S.showRab;
+    S.showBrutto = !!data.zeigt_brutto;
+    document.getElementById('f-brutto').checked = S.showBrutto;
+    S.showTransport = !!data.zeigt_transport;
+    S.transportKosten = data.transport_kosten !== null && data.transport_kosten !== undefined
+      ? String(data.transport_kosten).replace('.', ',')
+      : '';
+    var tb = document.getElementById('btn-transport');
+    if(tb){
+      if(S.showTransport){
+        tb.className = 'btn-transport on';
+        tb.textContent = '\u2713 Transportkosten Extra';
+      } else {
+        tb.className = 'btn-transport off';
+        tb.textContent = '+ Transportkosten Extra';
+      }
+    }
+    renderTransport();
+    S.notiz = data.interne_notiz || '';
+    var fNotiz = document.getElementById('f-notiz');
+    if(fNotiz) fNotiz.value = S.notiz;
+    if(data.ersteller_name){
+      var erstSel = document.getElementById('f-erst');
+      var erstFound = false;
+      for(var j = 0; j < erstSel.options.length; j++){
+        if(erstSel.options[j].value === data.ersteller_name){
+          erstSel.selectedIndex = j;
+          erstFound = true;
+          break;
+        }
+      }
+      if(erstFound){
+        S.erst = data.ersteller_name;
+        S.ini = data.ersteller_kuerzel || '';
+      }
+    }
+    S.lnr = String(data.laufende_nr || 1).padStart(2, '0');
+    document.getElementById('f-lnr').value = S.lnr;
+    S.pos = Array.isArray(data.positionen) ? data.positionen.slice() : [];
+    renderPos();
+    var origNr = data.angebots_nr || '';
+    var fNr = document.getElementById('f-nr');
+    if(fNr) fNr.value = origNr;
+    var akk = document.getElementById('aufruf-akkordion');
+    if(akk && !akk.hidden){
+      toggleAufruf();
+    }
+    showMsg('\ud83d\udcc2 Angebot ' + origNr + ' geladen. Beim Speichern wird automatisch eine neue Variante angelegt.');
+    checkOk();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }catch(e){
+    console.error('ladeAngebotInsTool Exception:', e);
+    alert('Laden fehlgeschlagen:\n\n' + e.message);
+  }
 }
 function handleAufrufKategorie(){
   var kat = document.getElementById('aufruf-kategorie').value;
