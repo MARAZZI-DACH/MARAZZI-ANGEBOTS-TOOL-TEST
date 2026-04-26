@@ -1011,17 +1011,23 @@ async function naechsteVariante(parentId){
       const netto = calcNet(p.brutto || 0, p.gr || 0, p.z1 || 0, p.z2 || 0, p.z3 || 0);
       return sum + (menge * netto);
     }, 0);
-    var parentId = null;
+var parentId = null;
     var varianteWert = null;
+    var ersteller_kuerzel_final = S.ini || 'XX';
+    var angebots_datum_final = heute;
+    var laufende_nr_final = lfdNum;
     if(S.geladenVon && S.geladenVon.id){
       var rootId = S.geladenVon.parent_id || S.geladenVon.id;
       varianteWert = await naechsteVariante(rootId);
       parentId = rootId;
+      ersteller_kuerzel_final = S.geladenVon.ersteller_kuerzel || ersteller_kuerzel_final;
+      angebots_datum_final = S.geladenVon.angebots_datum || angebots_datum_final;
+      laufende_nr_final = S.geladenVon.laufende_nr || laufende_nr_final;
     }
     const datensatz = {
-      ersteller_kuerzel: S.ini || 'XX',
-      angebots_datum: heute,
-      laufende_nr: lfdNum,
+      ersteller_kuerzel: ersteller_kuerzel_final,
+      angebots_datum: angebots_datum_final,
+      laufende_nr: laufende_nr_final,
       ersteller_name: S.erst || '',
       bauvorhaben: S.bv || '',
       kunde_name: kundeName,
