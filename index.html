@@ -308,7 +308,7 @@ var GR_OPT=[0.50,0.55];
 var ZR1_OPT=[0,0.02,0.03,0.05,0.07,0.08,0.10,0.12,0.15,0.18,0.20,0.30,0.50];
 var ZR23_OPT=[0,0.02,0.03,0.05,0.07,0.08,0.10,0.12,0.15,0.18,0.20];
 
-var S={erst:'',ini:'',bv:'',kunde:'',ansprech:'',kat:'',marke:'',ocPdf:'',prom:'',pos:[],showRab:false,showBrutto:false,lnr:'01',showTransport:false,transportKosten:'' ,notiz:'',gespeichert:false,gespeichertId:null,geladenVon:null};
+var S={erst:'',ini:'',bv:'',kunde:'',ansprech:'',kat:'',marke:'',ocPdf:'',prom:'',pos:[],showRab:false,showBrutto:false,lnr:'01',showTransport:false,transportKosten:'' ,notiz:'',gespeichert:false,gespeichertId:null,geladenVon:null,letzteSpeicherNr:''};
 
 var SIGS={};
 function getSig(n){return null;}
@@ -316,6 +316,7 @@ function getSig(n){return null;}
 function fmt(v){return v.toLocaleString('de-DE',{style:'currency',currency:'EUR'})}
 function calcNet(b,g,z1,z2,z3){return b*(1-g)*(1-z1)*(1-z2)*(1-z3)}
 function genNr(){
+  if(S.letzteSpeicherNr) return S.letzteSpeicherNr;
   var n=new Date();
   var ini=S.ini||'XX';
   return ini+String(n.getFullYear()).slice(-2)+String(n.getMonth()+1).padStart(2,'0')+String(n.getDate()).padStart(2,'0')+S.lnr;
@@ -993,8 +994,8 @@ async function ladeAngebotInsTool(id){
     if(akk && !akk.hidden){
       toggleAufruf();
     }
+  checkOk();
     showMsg('\ud83d\udcc2 Angebot ' + origNr + ' geladen. Beim Speichern wird automatisch eine neue Variante angelegt.');
-    checkOk();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }catch(e){
     console.error('ladeAngebotInsTool Exception:', e);
@@ -1162,6 +1163,7 @@ var parentId = null;
       S.gespeichert = true;
       S.gespeichertId = res.data ? res.data.id : null;
       var savedNr = res.data && res.data.angebots_nr ? res.data.angebots_nr : nr;
+      S.letzteSpeicherNr = savedNr;
       showMsg('\u2705 Angebot ' + savedNr + ' gespeichert. Sie können jetzt das PDF erstellen.');
       if(btnSave){
         btnSave.textContent = '\u2713 Gespeichert';
@@ -1216,7 +1218,7 @@ function resetAll(){
   document.getElementById('f-brutto').checked=false;
   
   S.erst='';S.ini='';updateNr();
-  S.gespeichert=false;S.gespeichertId=null;S.geladenVon=null;S.notiz='';
+ S.gespeichert=false;S.gespeichertId=null;S.geladenVon=null;S.letzteSpeicherNr='';S.notiz='';
   var fNotiz=document.getElementById('f-notiz');if(fNotiz)fNotiz.value='';
   var btnSave=document.getElementById('btn-save');
   if(btnSave){btnSave.textContent='Angebot speichern';btnSave.style.background='#1f6feb';btnSave.disabled=true;}
