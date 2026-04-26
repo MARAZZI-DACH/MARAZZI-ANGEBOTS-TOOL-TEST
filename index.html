@@ -116,7 +116,7 @@ button{cursor:pointer}
   <div id="aufruf-akkordion" hidden style="margin-top:16px">
 
     <div style="margin-bottom:12px">
-      <input type="text" id="aufruf-volltext" placeholder="🔍 Volltextsuche (z.B. &quot;Mahler Augsburg&quot;)" autocomplete="off" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:4px;font-size:14px;box-sizing:border-box">
+      <input type="text" id="aufruf-volltext" placeholder="🔍 Volltextsuche" autocomplete="off" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:4px;font-size:14px;box-sizing:border-box">
     </div>
 
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px">
@@ -161,7 +161,12 @@ button{cursor:pointer}
           <option value="">— Alle —</option>
         </select>
       </div>
-
+<div>
+        <label style="display:block;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#888;margin-bottom:4px">Marke</label>
+        <select id="aufruf-marke" style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:4px">
+          <option value="">— Alle —</option>
+        </select>
+      </div>
       <div>
         <label style="display:block;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#888;margin-bottom:4px">Min-m²</label>
         <select id="aufruf-min-qm" style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:4px">
@@ -338,7 +343,18 @@ function fuelleAufrufDropdowns(){
   D.KAT.forEach(function(kat){
     kSel.innerHTML += '<option value="'+esc(kat)+'">'+esc(kat)+'</option>';
   });
-  
+  // Marke (aus D.KM, alle Marken aller Kategorien dedupliziert + sortiert)
+  var markenSet = {};
+  Object.keys(D.KM).forEach(function(kat){
+    D.KM[kat].forEach(function(eintrag){
+      markenSet[eintrag[0]] = true;
+    });
+  });
+  var markenSortiert = Object.keys(markenSet).sort(function(a,b){return a.localeCompare(b)});
+  var mSel = document.getElementById('aufruf-marke');
+  markenSortiert.forEach(function(marke){
+    mSel.innerHTML += '<option value="'+esc(marke)+'">'+esc(marke)+'</option>';
+  });
 }
   
 function init(){
@@ -769,6 +785,7 @@ async function ladeAngebote(append){
   var bauvorhaben = document.getElementById('aufruf-bauvorhaben').value.trim();
   var serie = document.getElementById('aufruf-serie').value;
   var kategorie = document.getElementById('aufruf-kategorie').value;
+  var marke = document.getElementById('aufruf-marke').value;
   var minQm = document.getElementById('aufruf-min-qm').value;
   var auchGeloescht = document.getElementById('aufruf-geloescht-toggle').checked;
 
@@ -780,7 +797,7 @@ async function ladeAngebote(append){
   if(datumVon) q = q.gte('angebots_datum', datumVon);
   if(datumBis) q = q.lte('angebots_datum', datumBis);
   if(kunde) q = q.ilike('kunde_name', '%' + kunde + '%');
-
+  if(marke) q = q.eq('marke', marke);
   if(bauvorhaben){
     var bvWoerter = bauvorhaben.split(/\s+/).filter(function(w){return w.length > 0});
     bvWoerter.forEach(function(w){
@@ -903,7 +920,7 @@ function ladeAngebotInsTool(id){
 }
 
 function aufrufBindeFilter(){
-  ['aufruf-ersteller','aufruf-datum-von','aufruf-datum-bis','aufruf-serie','aufruf-kategorie','aufruf-min-qm','aufruf-geloescht-toggle'].forEach(function(id){
+  ['aufruf-ersteller','aufruf-datum-von','aufruf-datum-bis','aufruf-serie','aufruf-kategorie','aufruf-marke','aufruf-min-qm','aufruf-geloescht-toggle'].forEach(function(id){
     document.getElementById(id).addEventListener('change', function(){ ladeAngebote(false) });
   });
 
