@@ -200,12 +200,13 @@ button{cursor:pointer}
             <th style="padding:8px 10px;border-bottom:1px solid #ddd">Kunde</th>
             <th style="padding:8px 10px;border-bottom:1px solid #ddd">Bauvorhaben</th>
             <th style="padding:8px 10px;border-bottom:1px solid #ddd">Ersteller</th>
+            <th style="padding:8px 10px;border-bottom:1px solid #ddd;text-align:right">m²</th>
             <th style="padding:8px 10px;border-bottom:1px solid #ddd;text-align:right">Summe</th>
             <th style="padding:8px 10px;border-bottom:1px solid #ddd"></th>
           </tr>
         </thead>
         <tbody id="aufruf-tbody">
-          <tr><td colspan="7" style="padding:20px;text-align:center;color:#888">Akkordion wird mit Daten befüllt sobald JS aktiv ist...</td></tr>
+          <tr><td colspan="8" style="padding:20px;text-align:center;color:#888">Akkordion wird mit Daten befüllt sobald JS aktiv ist...</td></tr>
         </tbody>
       </table>
     </div>
@@ -823,7 +824,10 @@ async function ladeAngebote(append){
         'bauvorhaben.ilike.' + like + ',' +
         'ansprechpartner.ilike.' + like + ',' +
         'interne_notiz.ilike.' + like + ',' +
-        'ersteller_name.ilike.' + like
+        'ersteller_name.ilike.' + like + ',' +
+        'positionen::text.ilike.' + like + ',' +
+        'kategorie.ilike.' + like + ',' +
+        'marke.ilike.' + like
       );
     });
   }
@@ -880,7 +884,7 @@ function renderAngebote(append){
   }
 
   if(alle.length === 0){
-    tbody.innerHTML = '<tr><td colspan="7" style="padding:20px;text-align:center;color:#888">Keine Angebote gefunden.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="padding:20px;text-align:center;color:#888">Keine Angebote gefunden.</td></tr>';
     document.getElementById('aufruf-mehr-laden').hidden = true;
     document.getElementById('aufruf-treffer-count').textContent = '0 Treffer';
     return;
@@ -902,14 +906,21 @@ function renderAngebote(append){
 function renderAngebotZeile(a){
   var datum = a.angebots_datum ? formatDatumDE(a.angebots_datum) : '-';
   var summe = a.gesamt_summe ? fmt(parseFloat(a.gesamt_summe)) : '-';
+  var qm = (a.positionen || []).reduce(function(sum, p){
+    if(p.me === 'm2' && p.menge !== 'ALT'){
+      return sum + (parseFloat(p.menge) || 0);
+    }
+    return sum;
+  }, 0);
+  var qmAnzeige = qm > 0 ? qm.toLocaleString('de-DE') + ' m\u00b2' : '-';
   var geloeschtStyle = a.geloescht ? 'opacity:0.5;text-decoration:line-through' : '';
-
   return '<tr style="border-bottom:1px solid #eee;'+geloeschtStyle+'">' +
     '<td style="padding:8px 10px;font-family:monospace">'+esc(a.angebots_nr || '-')+'</td>' +
     '<td style="padding:8px 10px">'+datum+'</td>' +
     '<td style="padding:8px 10px">'+esc(a.kunde_name || '-')+'</td>' +
     '<td style="padding:8px 10px">'+esc(a.bauvorhaben || '-')+'</td>' +
     '<td style="padding:8px 10px">'+esc(a.ersteller_name || '-')+'</td>' +
+    '<td style="padding:8px 10px;text-align:right">'+qmAnzeige+'</td>' +
     '<td style="padding:8px 10px;text-align:right">'+summe+'</td>' +
     '<td style="padding:8px 10px"><button type="button" onclick="ladeAngebotInsTool(\''+a.id+'\')" style="padding:4px 10px;background:#E30613;color:white;border:none;border-radius:3px;cursor:pointer;font-size:12px">Laden</button></td>' +
   '</tr>';
