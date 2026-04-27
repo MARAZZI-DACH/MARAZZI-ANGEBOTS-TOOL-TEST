@@ -734,7 +734,7 @@ function doPDF(){
     '<div style="font-weight:700;font-style:italic">Marazzi Group S.r.l.</div>'+
     '<div>'+esc(S.erst||'')+'</div>'+
     '</div>'+
-    '<script>window.onload=function(){window.print();window.onafterprint=function(){window.close()};setTimeout(function(){window.close()},500)}<\/script>'+
+    '<script>window.onload=function(){document.title='+JSON.stringify(pdfTitle)+';setTimeout(function(){window.print()},100);window.onafterprint=function(){window.close()};setTimeout(function(){window.close()},500)}<\/script>'+
     '</body></html>';
 
   try{
