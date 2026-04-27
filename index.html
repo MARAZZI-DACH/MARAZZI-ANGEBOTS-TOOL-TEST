@@ -1120,7 +1120,7 @@ async function naechsteVariante(parentId){
     const kundePlzOrt = kundenZeilen[2] || '';
     const gesamt = (S.pos || []).reduce(function(sum, p){
       const menge = parseFloat(p.menge) || 0;
-      const netto = calcNet(p.brutto || 0, p.gr || 0, p.z1 || 0, p.z2 || 0, p.z3 || 0);
+      const netto = calcNet(p.brutto || 0, p.GR || 0, p.zr1 || 0, p.zr2 || 0, p.zr3 || 0);
       return sum + (menge * netto);
     }, 0);
 var parentId = null;
