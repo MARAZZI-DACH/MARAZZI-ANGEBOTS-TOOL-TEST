@@ -740,7 +740,7 @@ function doPDF(){
   try{
     var isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&'ontouchend' in document);
     var w=window.open('','_blank');
-    if(w){w.document.write(pdf);w.document.close();}
+    if(w){w.document.write(pdf);w.document.close();try{w.history.replaceState(null,'','/'+encodeURIComponent(pdfTitle)+'.pdf')}catch(_e){}}
     else{showMsg('Bitte Pop-ups erlauben und erneut versuchen.');return;}
     showMsg('\u2705 Angebot erstellt! Drucken: Strg+P \u2192 Als PDF speichern.');
 
