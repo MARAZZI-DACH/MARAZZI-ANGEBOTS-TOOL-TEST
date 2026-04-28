@@ -748,12 +748,6 @@ function doPDF(){
     } else {
       var container=document.createElement('div');
       container.innerHTML=pdf;
-      // FIX 28.04.2026: Container muss im DOM sein, sonst rendert Chrome 146 leer/falsch
-      container.style.position='fixed';
-      container.style.left='-9999px';
-      container.style.top='0';
-      container.style.width='210mm';
-      document.body.appendChild(container);
       var opts={
         margin:[12,10,12,10],
         filename:pdfTitle+'.pdf',
@@ -761,13 +755,7 @@ function doPDF(){
         html2canvas:{scale:6,useCORS:true,letterRendering:true},
         jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
       };
-      setTimeout(function(){
-        html2pdf().set(opts).from(container).save().then(function(){
-          document.body.removeChild(container);
-        }).catch(function(){
-          if(container.parentNode)document.body.removeChild(container);
-        });
-      },200);
+      html2pdf().set(opts).from(container).save();
       showMsg('\u2705 Angebot wird heruntergeladen...');
     }
   }catch(e){showMsg('Fehler: '+e.message)}
