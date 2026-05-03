@@ -1124,8 +1124,9 @@ var aufrufState = {
   debounceTimer: null,
   loaded: false
 };
-async function setAngebotStatus(id, status){
+async function setAngebotStatus(id, status, currentStatus){
   if(status === 'geloescht' && !confirm('Angebot wirklich in den Papierkorb verschieben?')) return;
+  if(status === 'archiviert' && currentStatus === 'archiviert') status = 'aktiv';
   const { error } = await supa.from('angebote').update({ status: status }).eq('id', id);
   if(error){ alert('Fehler: ' + error.message); return; }
   ladeAngebote(false);
