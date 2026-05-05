@@ -1735,11 +1735,22 @@ async function resetAll(){
   if(varInputR)varInputR.value='';
   if(varBoxR)varBoxR.style.display='none';
   var btnSave=document.getElementById('btn-save');
-  if(btnSave){btnSave.textContent='Angebot speichern';btnSave.classList.remove('saved');btnSave.disabled=true;}
+ if(btnSave){btnSave.textContent='Angebot speichern';btnSave.classList.remove('saved');btnSave.disabled=true;}
   renderPos();checkOk();
   document.getElementById('msg-box').style.display='none';
-}
 
+  // Filter der Angebotssuche ebenfalls zurücksetzen
+  ['aufruf-volltext','aufruf-ersteller','aufruf-datum-von','aufruf-datum-bis','aufruf-kunde','aufruf-bauvorhaben','aufruf-serie','aufruf-kategorie','aufruf-marke','aufruf-min-qm'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.value = '';
+  });
+  var geloeschtTog = document.getElementById('aufruf-geloescht-toggle');
+  if(geloeschtTog) geloeschtTog.checked = false;
+  // Falls die Liste schon geladen war, neu laden ohne Filter
+  if(typeof aufrufState !== 'undefined' && aufrufState.loaded && typeof ladeAngebote === 'function'){
+    ladeAngebote();
+  }
+}
 
 function doKSearch(q){
   var box=document.getElementById('k-results');
