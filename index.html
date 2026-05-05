@@ -116,8 +116,9 @@ button{cursor:pointer}
   #aufruf-tabelle tbody td:nth-child(8) button{width:100%;padding:10px !important;font-size:14px !important}
   #aufruf-tabelle tbody td:nth-child(9){display:inline-block;width:28%;padding-top:10px;float:right}
   #aufruf-tabelle tbody td:nth-child(9) button{width:100% !important;height:38px !important}
-  /* iOS Safari: input type=date in Filter-Bereich kompakter machen */
-  input[type="date"]{min-width:0;width:100%;font-size:13px;padding:8px 6px;-webkit-appearance:none;appearance:none;box-sizing:border-box;min-height:36px;line-height:1.4;display:block}   #aufruf-datum-von,#aufruf-datum-bis{min-height:36px}
+  /* Filter-Felder im Aufruf-Akkordion: einheitliche Höhe (auch für iOS-Datums-Input) */
+  #aufruf-akkordion select,#aufruf-akkordion input[type="text"],#aufruf-akkordion input[type="date"]{min-height:38px;height:38px;padding:8px 10px;font-size:13px;box-sizing:border-box;line-height:1.2}
+  #aufruf-akkordion input[type="date"]{-webkit-appearance:none;appearance:none;display:block;width:100%;min-width:0}
 }
 </style>
 <!-- jsPDF + autotable: Vektor-PDF, Browser-Update-resistent (jsdelivr CDN) -->
