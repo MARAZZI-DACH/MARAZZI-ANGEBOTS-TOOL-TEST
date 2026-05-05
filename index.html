@@ -120,6 +120,27 @@ button{cursor:pointer}
   #aufruf-akkordion select,#aufruf-akkordion input[type="text"],#aufruf-akkordion input[type="date"]{min-height:38px;height:38px;padding:8px 10px;font-size:13px;box-sizing:border-box;line-height:1.2}
   #aufruf-akkordion input[type="date"]{-webkit-appearance:none;appearance:none;display:block;width:100%;min-width:0}
 }
+ /* iOS (iPhone + iPad): Datums-Inputs gleich hoch wie Selects/Text-Inputs */
+@media (hover: none) and (pointer: coarse){
+  #aufruf-akkordion input[type="date"]{
+    -webkit-appearance:none;
+    appearance:none;
+    height:38px;
+    min-height:38px;
+    padding:6px 10px;
+    box-sizing:border-box;
+    font-size:13px;
+    line-height:1.2;
+    display:block;
+    width:100%;
+  }
+  #aufruf-akkordion select,
+  #aufruf-akkordion input[type="text"]{
+    height:38px;
+    min-height:38px;
+    box-sizing:border-box;
+  }
+} 
 </style>
 <!-- jsPDF + autotable: Vektor-PDF, Browser-Update-resistent (jsdelivr CDN) -->
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
