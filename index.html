@@ -799,9 +799,13 @@ function doPDF(useOriginal){
         doc.setTextColor(valueColor[0],valueColor[1],valueColor[2]);
       }
       doc.setFont('helvetica','bold');
-      doc.text(String(value||''), valueX, y);
+      // Automatischer Wortumbruch falls Wert zu lang fuer eine Zeile ist
+      var maxValueWidth = pageW - valueX - marginL;
+      var valueLines = doc.splitTextToSize(String(value||''), maxValueWidth);
+      doc.text(valueLines, valueX, y);
       doc.setTextColor(0,0,0);
-      y+=lineH;
+      // y um die Anzahl der tatsaechlichen Zeilen erhoehen
+      y += lineH * valueLines.length;
     }
 
     addHeaderRow('Datum:', datum);
