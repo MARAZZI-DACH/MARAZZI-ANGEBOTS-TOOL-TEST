@@ -932,7 +932,7 @@ function doPDF(useOriginal){
       head: head,
       body: body,
       startY: tableY,
-      margin: {left: marginL, right: marginL, top: 50},
+      margin: {left: marginL, right: marginL, top: 60},
       theme: 'grid',
       styles: {
         font: 'helvetica',
@@ -1023,7 +1023,10 @@ function doPDF(useOriginal){
       if(S.bv){
         doc.setFont('helvetica','bold');
         doc.text('Bauvorhaben:', labelX, miniY);
-        doc.text(String(S.bv), valueX, miniY);
+        // Bauvorhaben mit automatischem Wortumbruch falls zu lang
+        var maxBvWidth = pageW - valueX - marginL;
+        var bvLines = doc.splitTextToSize(String(S.bv), maxBvWidth);
+        doc.text(bvLines, valueX, miniY);
       }
     }
     // Page-Break-Helper: pruefe ob noch genug Platz fuer den naechsten Block ist
