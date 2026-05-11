@@ -2107,6 +2107,13 @@ var parentId = null;
       var savedNr = res.data && res.data.angebots_nr ? res.data.angebots_nr : nr;
       S.letzteSpeicherNr = savedNr;
       var savedVariante = res.data && res.data.variante ? res.data.variante : '';
+      // State auf gespeicherte Werte synchronisieren, damit PDF danach den richtigen Ersteller zeigt (Bug-Fix 11.05.2026)
+      if(res.data){
+        if(res.data.ersteller_name) S.erst = res.data.ersteller_name;
+        if(res.data.ersteller_kuerzel) S.ini = res.data.ersteller_kuerzel;
+        S.geladenVon = res.data;
+        S.istOriginalGeladen = true;
+      }
       var varBox2 = document.getElementById('variante-box');
       var varInput2 = document.getElementById('f-variante');
       if(varBox2 && varInput2 && savedVariante){
