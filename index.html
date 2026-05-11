@@ -1176,8 +1176,12 @@ function doPDF(useOriginal){
           }
         }
         // Body
+       // Body
         if(data.section === 'body' && data.row.raw){
-          // Alt-Positionen: gleiche Farbe wie normale Zeilen (kein Color-Override)
+          // Alt-Zeilen: hellgrauer Hintergrund zur visuellen Abgrenzung
+          if(data.row.raw._isAlt){
+            data.cell.styles.fillColor = [245, 246, 248]; // sehr helles Grau, harmoniert mit Marazzi-Palette
+          }
           // Nettopreis-Spalte (Index 9): Inhalt leeren — wird manuell in didDrawCell gezeichnet
           if(data.column.index === 9 && !data.row.raw._isAlt){
             data.cell.styles.textColor = NAVY;
