@@ -36,7 +36,7 @@ button{cursor:pointer}
 .sr select{padding:10px 14px;border-radius:8px;border:2px solid var(--border);font-size:13px;min-width:180px;background:#fff}
 .sr input{flex:1;padding:10px 14px;border-radius:8px;border:2px solid var(--border);font-size:13px;min-width:200px}
 
-.res{max-height:300px;overflow:auto;border:2px solid var(--border);border-radius:10px;background:#fff;box-shadow:0 8px 32px rgba(0,0,0,0.08)}
+.res{max-height:460px;overflow:auto;border:2px solid var(--border);border-radius:10px;background:#fff;box-shadow:0 8px 32px rgba(0,0,0,0.08)}
 .res table{width:100%;border-collapse:collapse;font-size:12px}
 .res th{padding:8px 10px;text-align:left;font-weight:700;font-size:10px;color:#888;background:#fafaf8;position:sticky;top:0;z-index:1;text-transform:uppercase;letter-spacing:0.5px}
 .res td{padding:6px 10px;border-bottom:1px solid #f0f0ec}
@@ -611,14 +611,18 @@ function doSearch(){
   var f=D.A;
   if(sf){var si=D.S.indexOf(sf);f=f.filter(function(a){return a[0]===si})}
   if(q){var ql=q.toLowerCase();f=f.filter(function(a){return a[1].toLowerCase().indexOf(ql)>=0||a[2].toLowerCase().indexOf(ql)>=0||D.S[a[0]].toLowerCase().indexOf(ql)>=0||a[3].toLowerCase().indexOf(ql)>=0})}
-  f=f.slice(0,40);
+  var gesamt=f.length;
+  var limit=sf?gesamt:200;   // Serienfilter aktiv: komplette Serie anzeigen
+  f=f.slice(0,limit);
   if(f.length===0){box.innerHTML='<div class="nores">Kein Artikel gefunden</div>';return}
   var h='<div class="res"><table><thead><tr><th>Serie</th><th>Artikel</th><th style="text-align:center">Kode</th><th style="text-align:center">Format</th><th style="text-align:center">Werk</th><th style="text-align:center">ME</th><th style="text-align:right">Brutto</th><th></th></tr></thead><tbody>';
   f.forEach(function(a){
     var idx=D.A.indexOf(a);
     h+='<tr><td style="color:#999;font-size:11px">'+esc(D.S[a[0]])+'</td><td style="font-weight:500">'+esc(a[1])+'</td><td style="text-align:center;font-family:monospace;font-size:11px">'+esc(a[2])+'</td><td style="text-align:center;font-size:11px">'+esc(a[3])+'</td><td style="text-align:center;font-size:10px;color:#999">'+esc(D.W[a[4]])+'</td><td style="text-align:center;font-size:11px">'+esc(D.M[a[5]])+'</td><td style="text-align:right;font-weight:600">'+fmt(a[6])+'</td><td><button class="ba" onclick="addPos('+idx+')">+</button></td></tr>';
   });
-  h+='</tbody></table></div>';
+  h+='</tbody></table>';
+  if(gesamt>f.length){h+='<div style="padding:8px 10px;font-size:11px;color:#888;background:#fafaf8;border-top:1px solid #f0f0ec">'+(gesamt-f.length)+' weitere Treffer \u2013 Suche eingrenzen oder Serie w\u00e4hlen</div>';}
+  h+='</div>';
   box.innerHTML=h;
 }
 
